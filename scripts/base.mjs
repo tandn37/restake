@@ -1,7 +1,8 @@
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { Slip10RawIndex, pathToString } from "@cosmjs/crypto";
 import Network from '../src/utils/Network.mjs'
-import {coin, timeStamp, mapSync, executeSync, overrideNetworks} from '../src/utils/Helpers.mjs'
+import Notification from "../src/utils/Notification.mjs";
+import { coin, timeStamp, mapSync, executeSync, overrideNetworks, getTxUrl } from '../src/utils/Helpers.mjs'
 
 import { add, bignumber, floor, smaller, smallerEq } from 'mathjs'
 
@@ -15,21 +16,21 @@ import _ from 'lodash'
 import 'dotenv/config'
 
 export class Autostake {
-  constructor(){
+  constructor() {
     this.mnemonic = process.env.MNEMONIC
-    if(!this.mnemonic){
+    if (!this.mnemonic) {
       timeStamp('Please provide a MNEMONIC environment variable')
       process.exit()
     }
   }
 
-  async run(networkName){
+  async run(networkName) {
     const networks = this.getNetworksData()
-    if(networkName && !networks.map(el => el.name).includes(networkName)) return timeStamp('Invalid network name:', networkName)
+    if (networkName && !networks.map(el => el.name).includes(networkName)) return timeStamp('Invalid network name:', networkName)
     const calls = networks.map(data => {
       return async () => {
-        if(networkName && data.name !== networkName) return
-        if(data.enabled === false) return
+        if (networkName && data.name !== networkName) return
+        if (data.enabled === false) return
 
         let client
         try {
@@ -38,14 +39,14 @@ export class Autostake {
           return timeStamp('Failed to connect', error.message)
         }
 
-        if(!client) return timeStamp('Skipping')
+        if (!client) return timeStamp('Skipping')
 
         const { restUrl, rpcUrl, usingDirectory } = client.network
 
         timeStamp('Using REST URL', restUrl)
         timeStamp('Using RPC URL', rpcUrl)
 
-        if(usingDirectory){
+        if (usingDirectory) {
           timeStamp('You are using public nodes, script may fail with many delegations. Check the README to use your own')
           timeStamp('Delaying briefly to reduce load...')
           await new Promise(r => setTimeout(r, (Math.random() * 31) * 1000));
@@ -61,7 +62,7 @@ export class Autostake {
     await executeSync(calls, 1)
   }
 
-  async runNetwork(client){
+  async runNetwork(client) {
     timeStamp('Running autostake')
     const balance = await this.checkBalance(client)
     if (!balance || smaller(balance, 1_000)) {
@@ -96,9 +97,9 @@ export class Autostake {
     timeStamp('⚛')
     timeStamp('Starting', network.prettyName)
 
-    if(network.data.autostake?.correctSlip44){
+    if (network.data.autostake?.correctSlip44) {
       slip44 = network.slip44 || 118
-    }else{
+    } else {
       slip44 = network.data.autostake?.slip44 || 118
     }
     let hdPath = [
@@ -246,12 +247,12 @@ export class Autostake {
       return
     }
 
-    if (grant.maxTokens){
-      if(smallerEq(grant.maxTokens, 0)) {
+    if (grant.maxTokens) {
+      if (smallerEq(grant.maxTokens, 0)) {
         timeStamp(address, grant.maxTokens, client.network.denom, 'grant balance is empty, skipping')
         return
       }
-      if(smaller(grant.maxTokens, autostakeAmount)) {
+      if (smaller(grant.maxTokens, autostakeAmount)) {
         autostakeAmount = grant.maxTokens
         timeStamp(address, grant.maxTokens, client.network.denom, 'grant balance is too low, using remaining')
       }
@@ -259,7 +260,7 @@ export class Autostake {
 
     let timeout = client.network.data.autostake?.delegatorTimeout || 5000
     const withdrawAddress = await client.queryClient.getWithdrawAddress(address, { timeout })
-    if(withdrawAddress && withdrawAddress !== address){
+    if (withdrawAddress && withdrawAddress !== address) {
       timeStamp(address, 'has a different withdraw address:', withdrawAddress)
       return
     }
@@ -274,7 +275,7 @@ export class Autostake {
   async autostake(client, messages) {
     let batchSize = client.network.data.autostake?.batchTxs || 50
     let batches = _.chunk(_.compact(messages), batchSize)
-    if(batches.length){
+    if (batches.length) {
       timeStamp('Sending', messages.length, 'messages in', batches.length, 'batches of', batchSize)
     }
     let calls = batches.map((batch, index) => {
@@ -284,8 +285,19 @@ export class Autostake {
           const memo = 'REStaked by ' + client.operator.moniker
           await client.signingClient.signAndBroadcast(client.operator.botAddress, batch, undefined, memo).then((result) => {
             timeStamp("Successfully broadcasted");
+            Notification.send({
+              network: client.network.prettyName,
+              status: 'Success',
+              txHash: result.transactionHash,
+              txUrl: getTxUrl(client.network.name, result.transactionHash),
+            });
           }, (error) => {
             timeStamp('Failed to broadcast:', error.message)
+            Notification.send({
+              network: client.network.prettyName,
+              status: 'Fail',
+              error: error.message,
+            });
           })
         } catch (error) {
           timeStamp('ERROR: Skipping batch:', error.message)
@@ -351,7 +363,7 @@ export class Autostake {
       const overridesData = fs.readFileSync('src/networks.local.json');
       const overrides = overridesData && JSON.parse(overridesData) || {}
       Object.keys(overrides).forEach(key => {
-        if(!networkNames.includes(key)) timeStamp('Invalid key in networks.local.json:', key)
+        if (!networkNames.includes(key)) timeStamp('Invalid key in networks.local.json:', key)
       })
       return overrideNetworks(networks, overrides)
     } catch {
