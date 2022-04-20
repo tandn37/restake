@@ -55,6 +55,11 @@ export class Autostake {
         try {
           await this.runNetwork(client)
         } catch (error) {
+          Notification.send({
+            network: client.network.prettyName,
+            status: 'Fail',
+            error: error.message,
+          })
           return timeStamp('Autostake failed, skipping network', error.message)
         }
       }
@@ -67,6 +72,11 @@ export class Autostake {
     const balance = await this.checkBalance(client)
     if (!balance || smaller(balance, 1_000)) {
       timeStamp('Bot balance is too low')
+      Notification.send({
+        network: client.network.prettyName,
+        status: 'Fail',
+        error: 'Bot balance is too low',
+      })
       return
     }
 
@@ -132,8 +142,23 @@ export class Autostake {
     if (!network.authzSupport) return timeStamp('No Authz support')
 
     await network.connect()
-    if (!network.rpcUrl) return timeStamp('Could not connect to RPC API')
-    if (!network.restUrl) return timeStamp('Could not connect to REST API')
+
+    if (!network.rpcUrl) {
+      Notification.send({
+        network: network.prettyName,
+        status: 'Fail',
+        error: 'Could not connect to RPC API',
+      })
+      return timeStamp('Could not connect to RPC API')
+    }
+    if (!network.restUrl) {
+      Notification.send({
+        network: network.prettyName,
+        status: 'Fail',
+        error: 'Could not connect to REST API',
+      })
+      return timeStamp('Could not connect to REST API')
+    }
 
     const client = await network.signingClient(wallet)
     client.registry.register("/cosmos.authz.v1beta1.MsgExec", MsgExec)
@@ -277,6 +302,12 @@ export class Autostake {
     let batches = _.chunk(_.compact(messages), batchSize)
     if (batches.length) {
       timeStamp('Sending', messages.length, 'messages in', batches.length, 'batches of', batchSize)
+    } else {
+      Notification.send({
+        network: client.network.prettyName,
+        status: 'Success',
+        message: 'Nothing to do',
+      })
     }
     let calls = batches.map((batch, index) => {
       return async () => {
@@ -288,7 +319,6 @@ export class Autostake {
             Notification.send({
               network: client.network.prettyName,
               status: 'Success',
-              txHash: result.transactionHash,
               txUrl: getTxUrl(client.network.name, result.transactionHash),
             });
           }, (error) => {

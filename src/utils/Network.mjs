@@ -55,7 +55,7 @@ class Network {
 
   async connect() {
     try {
-      this.queryClient = await QueryClient(this.chain.chainId, this.rpcUrl, this.restUrl)
+      this.queryClient = await QueryClient(this.chain.chainId, this.rpcUrl, this.restUrl, this.name)
       this.apyClient = ApyClient(this.chain, this.queryClient.rpcUrl, this.queryClient.restUrl)
       this.restUrl = this.queryClient.restUrl
       this.rpcUrl = this.queryClient.rpcUrl
