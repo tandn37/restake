@@ -65,6 +65,7 @@ const buildTxBytes = ({ SigningClient, ethSigner, chainId, network }) => async (
 }
 
 const estimateGas = (signingClient) => async (messages, pubkey, sequence) => {
+  return 7000000;
   const anyMsgs = messages.map((m) => signingClient.registry.encodeAsAny(m));
   const encodedPubkey = encodeSecp256k1Pubkey(pubkey);
   const result = await signingClient.forceGetQueryClient().tx.simulate(anyMsgs, '', encodedPubkey, sequence);
@@ -80,6 +81,7 @@ const signAndBroadcast = async (client, messages, memo) => {
     const pubkey = accounts[0].pubkey;
     const gasLimit = await estimateGas(StargateSigningClient)(messages, pubkey, sequence);
     timeStamp('GAS_PRICE', client.network.gasPrice);
+    timeStamp('GAS_LIMIT', gasLimit);
     const txBytes = await buildTxBytes({
       SigningClient: client.signingClient,
       ethSigner: client.ethSigner,
