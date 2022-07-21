@@ -56,15 +56,3 @@ export async function executeSync(calls, count){
     await mapAsync(batchCall, call => call())
   }
 }
-
-export function getTxUrl(network, txHash) {
-  const networkMapping = {
-    cosmoshub: 'cosmos',
-    gravitybridge: 'gravity-bridge',
-    lumnetwork: 'lum',
-    bandchain: 'band',
-    shentu: 'certik'
-  };
-  const mintScanNetwork = networkMapping[network] || network;
-  return `https://www.mintscan.io/${mintScanNetwork}/txs/${txHash}`;
-}
