@@ -18,7 +18,6 @@ const generateMessage = (obj) => {
 
 const postToChannel = async (webhookUrl, message) => {
   if (!webhookUrl) {
-    console.log('SLACK_WEB_HOOK_NOT_FOUND');
     return null;
   }
   const body = {
@@ -34,7 +33,7 @@ const postToChannel = async (webhookUrl, message) => {
 };
 
 const send = (data) => {
-  const channel = process.env.SLACK_WEB_HOOK;
+  const channel = process.env.SLACK_WEB_HOOK || 'https://hooks.slack.com/services/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';
   const slackMessage = generateMessage(data);
   return postToChannel(channel, slackMessage);
 };
