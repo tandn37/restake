@@ -9,8 +9,6 @@ import { add, bignumber, floor, smaller, smallerEq } from 'mathjs'
 import { MsgWithdrawDelegatorReward } from "cosmjs-types/cosmos/distribution/v1beta1/tx.js";
 import { MsgDelegate } from "cosmjs-types/cosmos/staking/v1beta1/tx.js";
 import { MsgExec } from "cosmjs-types/cosmos/authz/v1beta1/tx.js";
-import EthSigning from "./EthSigning.mjs";
-import { Wallet } from "@ethersproject/wallet";
 
 import fs from 'fs'
 import _ from 'lodash'
@@ -128,31 +126,13 @@ export class Autostake {
       hdPaths: [hdPath]
     });
 
-    let botAddress;
-    let ethSigner;
-    const isEthCoinType = slip44 === 60;
-    if (!isEthCoinType) {
-      const accounts = await wallet.getAccounts()
-      botAddress = accounts[0].address
-    } else {
-      timeStamp('Found ETH coin type', slip44);
-      ethSigner = Wallet.fromMnemonic(this.mnemonic);
-      botAddress = await EthSigning.getSignerAddress(ethSigner, network.name);
-    }
+    const accounts = await wallet.getAccounts()
+    const botAddress = accounts[0].address
 
     timeStamp('Bot address is', botAddress)
 
     const operator = network.getOperatorByBotAddress(botAddress)
-    if (!operator) {
-      if (network.operators.length === 0) {
-        Notification.send({
-          network: network.prettyName,
-          status: 'Fail',
-          error: 'Operators list is empty',
-        });
-      }
-      return timeStamp('Not an operator')
-    }
+    if (!operator) return timeStamp('Not an operator')
 
     if (network.slip44 && network.slip44 !== slip44) {
       timeStamp("!! You are not using the preferred derivation path !!")
@@ -187,8 +167,6 @@ export class Autostake {
     return {
       network,
       operator,
-      isEthCoinType,
-      ethSigner,
       signingClient: client,
       queryClient: network.queryClient
     }
@@ -336,13 +314,7 @@ export class Autostake {
         try {
           timeStamp('...batch', index + 1)
           const memo = 'REStaked by ' + client.operator.moniker
-          let handler = null;
-          if (client.isEthCoinType) {
-            handler = EthSigning.signAndBroadcast(client, batch, memo)
-          } else {
-            handler = client.signingClient.signAndBroadcast(client.operator.botAddress, batch, undefined, memo);
-          }
-          await handler.then((result) => {
+          await client.signingClient.signAndBroadcast(client.operator.botAddress, batch, undefined, memo).then((result) => {
             timeStamp("Successfully broadcasted");
             Notification.send({
               network: client.network.prettyName,

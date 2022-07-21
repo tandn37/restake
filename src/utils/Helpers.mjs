@@ -58,9 +58,6 @@ export async function executeSync(calls, count){
 }
 
 export function getTxUrl(network, txHash) {
-  if (network === 'terra') {
-    return `https://finder.terra.money/mainnet/tx/${txHash}`;
-  }
   const networkMapping = {
     cosmoshub: 'cosmos',
     gravitybridge: 'gravity-bridge',

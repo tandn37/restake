@@ -2,7 +2,6 @@ src/networks.local.json
 scripts/*
 !scripts/autostake.mjs
 !scripts/base.mjs
-!scripts/EthSigning.mjs
 !scripts/checkAuthz.mjs
 
 # dependencies

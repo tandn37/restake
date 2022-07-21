@@ -85,6 +85,7 @@
   },
   {
     "name": "evmos",
+    "enabled": false,
     "apyEnabled": false,
     "authzSupport": true
   },
@@ -194,13 +195,5 @@
     "ownerAddress": "mantlevaloper1fqs7gakxdmujtk0qufdzth5pfyspus3yx394zd",
     "authzSupport": true,
     "apyEnabled": true
-  },
-  {
-    "name": "shentu",
-    "authzSupport": true
-  },
-  {
-    "name": "injective",
-    "authzSupport": true
   }
 ]

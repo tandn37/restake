@@ -75,12 +75,6 @@ const QueryClient = async (chainId, rpcUrls, restUrls, network) => {
       });
   };
 
-  const getAccount = (address) => {
-    return axios
-      .get(restUrl + "/cosmos/auth/v1beta1/accounts/" + address)
-      .then((res) => res.data.account.base_account)
-  };
-
   const getDelegations = (address) => {
     return axios
       .get(restUrl + "/cosmos/staking/v1beta1/delegations/" + address)
@@ -210,7 +204,6 @@ const QueryClient = async (chainId, rpcUrls, restUrls, network) => {
     connected: !!rpcUrl && !!restUrl,
     rpcUrl,
     restUrl,
-    getAccount,
     getAllValidators,
     getValidators,
     getAllValidatorDelegations,
