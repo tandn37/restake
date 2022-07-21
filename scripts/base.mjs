@@ -240,7 +240,7 @@ export class Autostake {
     return client.queryClient.getGrants(client.operator.botAddress, delegatorAddress, { timeout })
       .then(
         (result) => {
-          if (result.stakeGrant) {
+          if (result.claimGrant && result.stakeGrant) {
             if (result.stakeGrant.authorization['@type'] === "/cosmos.authz.v1beta1.GenericAuthorization") {
               timeStamp(delegatorAddress, "Using GenericAuthorization, allowed")
               return [client.operator.address];
@@ -377,6 +377,12 @@ export class Autostake {
 
   buildRestakeMessage(address, validatorAddress, amount, denom) {
     return [{
+      typeUrl: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward",
+      value: MsgWithdrawDelegatorReward.encode(MsgWithdrawDelegatorReward.fromPartial({
+        delegatorAddress: address,
+        validatorAddress: validatorAddress
+      })).finish()
+    }, {
       typeUrl: "/cosmos.staking.v1beta1.MsgDelegate",
       value: MsgDelegate.encode(MsgDelegate.fromPartial({
         delegatorAddress: address,
