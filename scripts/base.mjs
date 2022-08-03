@@ -393,7 +393,7 @@ export class Autostake {
           Notification.send({
             network: client.network.prettyName,
             status: 'Success',
-            txUrl: getTxUrl(client.network.name, result.transactionHash),
+            txUrl: getTxUrl(client.network.name, response.transactionHash),
           });
           return { message }
         }, (error) => {
