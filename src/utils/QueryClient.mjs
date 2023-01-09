@@ -207,16 +207,45 @@ const QueryClient = async (chainId, restUrls, network) => {
     return pages;
   };
 
+  async function validateUrlsWithTendermintNodeInfo(urls) {
+    return Promise.any(urls.map(async (url) => {
+      url = url.replace(/\/$/, '')
+      try {
+        let data = await axios.get(url + '/cosmos/base/tendermint/v1beta1/node_info', { timeout: 10000 })
+          .then((res) => res.data)
+        if (data?.default_node_info?.network === chainId) {
+          return url;
+        }
+      } catch(err) { console.log('TENDERMINT_NODE_INFO', err) }
+    }));
+  }
+
+  async function validateUrlsWithNodeInfo(urls) {
+    return Promise.any(urls.map(async (url) => {
+      url = url.replace(/\/$/, '')
+      try {
+        let data = await axios.get(url + '/node_info', { timeout: 10000 })
+          .then((res) => res.data)
+        if (data?.node_info?.network === chainId) {
+          return url;
+        }
+      } catch(err) { console.log('NODE_INFO', err) }
+    }));
+  }
+
   async function findAvailableUrl(urls, type, network) {
-    if (type === "rest" && network === 'injective') {
-      return urls // ignore injective lcd due to error with /blocks/latest api
-    }
     if (!Array.isArray(urls)) {
       if (urls.match('cosmos.directory')) {
         return urls // cosmos.directory health checks already
       } else {
         urls = [urls]
       }
+    }
+    if (['evmos', 'quicksilver'].includes(network)) {
+      return validateUrlsWithTendermintNodeInfo(urls);
+    }
+    if (['injective'].includes(network)) {
+      return validateUrlsWithNodeInfo(urls);
     }
     const path = type === "rest" ? "/blocks/latest" : "/block";
     return Promise.any(urls.map(async (url) => {
