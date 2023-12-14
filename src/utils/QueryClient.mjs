@@ -241,11 +241,8 @@ const QueryClient = async (chainId, restUrls, network) => {
         urls = [urls]
       }
     }
-    if (['evmos', 'quicksilver', 'celestia'].includes(network)) {
+    if (['evmos', 'quicksilver', 'celestia', 'injective'].includes(network)) {
       return validateUrlsWithTendermintNodeInfo(urls);
-    }
-    if (['injective'].includes(network)) {
-      return validateUrlsWithNodeInfo(urls);
     }
     const path = type === "rest" ? "/blocks/latest" : "/block";
     return Promise.any(urls.map(async (url) => {
