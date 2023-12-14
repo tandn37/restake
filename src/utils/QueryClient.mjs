@@ -241,7 +241,7 @@ const QueryClient = async (chainId, restUrls, network) => {
         urls = [urls]
       }
     }
-    if (['evmos', 'quicksilver'].includes(network)) {
+    if (['evmos', 'quicksilver', 'celestia'].includes(network)) {
       return validateUrlsWithTendermintNodeInfo(urls);
     }
     if (['injective'].includes(network)) {
